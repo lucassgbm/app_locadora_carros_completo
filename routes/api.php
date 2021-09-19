@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +23,18 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return ['Chegamos: aqui'];
 // });
 
-// rota para manipular todos os métodos do Controlador Cliente
-// Route::resource('cliente', 'App\Http\Controllers\ClienteController');
-// exclui os métodos de create e edit:
-Route::apiResource('cliente', 'App\Http\Controllers\ClienteController');
-Route::apiResource('carro', 'App\Http\Controllers\CarroController');
-Route::apiResource('locacao', 'App\Http\Controllers\LocacaoController');
-Route::apiResource('marca', 'App\Http\Controllers\MarcaController');
-Route::apiResource('modelo', 'App\Http\Controllers\ModeloController');
+Route::prefix('v1')->middleware('jwt.auth')->group(function(){
+
+    Route::post('me', [AuthController::class, 'me']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::apiResource('cliente', 'App\Http\Controllers\ClienteController');
+    Route::apiResource('carro', 'App\Http\Controllers\CarroController');
+    Route::apiResource('locacao', 'App\Http\Controllers\LocacaoController');
+    Route::apiResource('marca', 'App\Http\Controllers\MarcaController');
+    Route::apiResource('modelo', 'App\Http\Controllers\ModeloController');
+
+});
+
+
+Route::post('login', [AuthController::class, 'login']);
