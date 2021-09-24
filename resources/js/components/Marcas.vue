@@ -38,10 +38,18 @@
                 </card-component>
                 <!-- fim do card de busca -->
 
-                <!-- início do card de listagem -->
+                <!-- início do card de listagem de marcas -->
                 <card-component titulo="Relação de marcas">
                     <template v-slot:conteudo>
-                        <table-component></table-component>
+                        <table-component 
+                            :dados="marcas"
+                            :titulos="{
+                                id: {titulo: 'ID', tipo: 'texto'},
+                                nome: {titulo: 'Nome', tipo: 'texto'},
+                                imagem: {titulo: 'Imagem', tipo: 'imagem'},
+                                created_at: {titulo: 'Data da criação', tipo: 'data'}
+                            }"
+                        ></table-component>
 
                     </template>
 
@@ -107,10 +115,32 @@
                 nomeMarca: '',
                 arquivoImagem: [],
                 transacaoStatus: '',
-                transacaoDetalhes: ''
+                transacaoDetalhes: {},
+                marcas: []
             }
         },
         methods: {
+            carregarLista(){
+
+                // descomentar, caso haja problemas na recuperação do token
+                // let config = {
+                //     headers: {
+                //         'Accept': 'application/json',
+                        // 'Authorization': this.token
+                //     }
+                // }
+
+                axios.get(this.urlBase)
+                    .then(response => {
+                        this.marcas = response.data
+
+
+                    })
+                    .catch(errors => {
+                        console.log(errors)
+
+                    })
+            },
             carregarImagem(e){
                 this.arquivoImagem = e.target.files
             },
@@ -133,16 +163,25 @@
                 axios.post(this.urlBase, formData, config)
                     .then(response => {
                         this.transacaoStatus = 'adicionado'
-                        this.transacaoDetalhes = response
+                        this.transacaoDetalhes = {
+                            mensagem: 'ID do registro: '+response.data.id
+                        }
 
                         // console.log(response)
                     })
                     .catch(errors => {
                         this.transacaoStatus = 'erro'
-                        this.transacaoDetalhes = errors.response
+                        this.transacaoDetalhes = {
+                            mensagem: errors.response.data.message,
+                            dados: errors.response.data.errors
+                        }
+                        errors.response
                         // console.log(data.message)
                     })
             }
+        },
+        mounted() {
+            this.carregarLista()
         }
     }
 </script>
