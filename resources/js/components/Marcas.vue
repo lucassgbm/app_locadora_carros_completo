@@ -43,7 +43,7 @@
                         <table-component 
                             :dados="marcas.data"
                             :visualizar="{ visivel: true, dataToggle: 'modal', dataTarget: '#modalMarcaVisualizar'}"
-                            :atualizar="true"
+                            :atualizar="{ visivel: true, dataToggle: 'modal', dataTarget: '#modalMarcaAtualizar'}"
                             :remover="{ visivel: true, dataToggle: 'modal', dataTarget: '#modalMarcaRemover'}"
                             :titulos="{
                                 id: {titulo: 'ID', tipo: 'texto'},
@@ -166,6 +166,35 @@
         </modal-component>
         <!-- Fim Modal de remoção de marca -->
 
+        <!-- Início Modal de atualização de marca -->
+        <modal-component id="modalMarcaAtualizar" titulo="Atualizar marca">
+            <template v-slot:alertas>
+                <alert-component tipo="success" :detalhes="$store.state.transacao" titulo="Transação realizada com sucesso" v-if="$store.state.transacao.status == 'sucesso'"></alert-component>
+                <alert-component tipo="danger" :detalhes="$store.state.transacao" titulo="Erro ao tentar atualizar a marca" v-if="$store.state.transacao.status == 'erro'"></alert-component>
+            </template>
+            <template v-slot:conteudo>
+                <div class="form-group">
+                    <input-container-component titulo="Nome da marca" id="atualizarNome" idHelp="atualizarImagemHelp" textoAjuda="Informe o nome da marca.">
+                        <input type="text" class="form-control" id="atualizarNome" aria-describedby="atualizarImagemHelp" placeholder="Nome da marca" v-model="$store.state.item.nome">
+                    </input-container-component>
+                </div>
+                <div class="form-group">
+                    <input-container-component titulo="Imagem" id="atualizarImagem" idHelp="atualizarImagemHelp" textoAjuda="Selecione uma imagem no formato .PNG.">
+                        <input type="file" class="form-control-file" id="atualizarImagem" aria-describedby="atualizarImagemHelp" placeholder="Selecione uma imagem" @change="carregarImagem($event)">
+                    </input-container-component>
+                </div>
+                
+                
+            </template>
+
+            <template v-slot:rodape>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" @click="atualizar()">Atualizar </button>
+            </template>
+
+        </modal-component>
+        <!-- Fim Modal de atualização de marca -->
+
        
     </div> <!-- container -->
 </template>
@@ -201,6 +230,42 @@ import InputContainer from './InputContainer.vue'
             }
         },
         methods: {
+            atualizar(){
+
+                let formData = new FormData();
+                formData.append('_method', 'patch');
+                formData.append('nome', this.$store.state.item.nome);
+
+                if(this.arquivoImagem[0]){
+                    formData.append('imagem', this.arquivoImagem[0]);
+                }
+
+                let url = this.urlBase + '/' + this.$store.state.item.id
+
+                let config = {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Accept': 'application/json',
+                        'Authorization': this.token
+                    }
+                }
+
+                axios.post(url, formData, config)
+                    .then(response => {
+                        atualizarImagem.value = ''
+                        this.$store.state.transacao.status = 'sucesso'
+                        this.$store.state.transacao.mensagem = 'Registro de marca atualizado'
+                        this.carregarLista()
+                    })
+                    .catch(errors => {
+                        this.$store.state.transacao.status = 'erro'
+                        this.$store.state.transacao.mensagem = errors.response.data.message
+                        this.$store.state.transacao.dados = errors.response.data.errors
+
+
+                    })
+
+            },
             remover(){
                 let confirmacao = confirm('Tem certeza que deseja remover esse registro?')
 
@@ -228,7 +293,7 @@ import InputContainer from './InputContainer.vue'
                     })
                     .catch(errors => {
                         this.$store.state.transacao.status = 'erro'
-                        this.$store.state.transacao.mensagem = 'Ocorreu um erro'
+                        this.$store.state.transacao.mensagem = errors.response.data.errors
                     })
             },
             pesquisar(){
@@ -286,7 +351,6 @@ import InputContainer from './InputContainer.vue'
                 this.arquivoImagem = e.target.files
             },
             salvar(){
-                console.log(this.nomeMarca, this.arquivoImagem[0])
 
                 let formData = new FormData()
                 formData.append('nome', this.nomeMarca)
@@ -308,7 +372,6 @@ import InputContainer from './InputContainer.vue'
                             mensagem: 'ID do registro: '+response.data.id
                         }
 
-                        // console.log(response)
                     })
                     .catch(errors => {
                         this.transacaoStatus = 'erro'
@@ -317,7 +380,6 @@ import InputContainer from './InputContainer.vue'
                             dados: errors.response.data.errors
                         }
                         errors.response
-                        // console.log(data.message)
                     })
             }
         },
